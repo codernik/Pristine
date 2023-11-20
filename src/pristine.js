@@ -41,9 +41,9 @@ _('equals', { fn: (val, otherFieldSelector) => { let other = document.querySelec
 export default function Pristine(form, config, live){
 
     let self = this;
-
+    
     init(form, config, live);
-
+    
     function init(form, config, live){
 
         form.setAttribute("novalidate", "true");
@@ -51,6 +51,11 @@ export default function Pristine(form, config, live){
         self.form = form;
         self.config = mergeConfig(config || {}, defaultConfig);
         self.live = !(live === false);
+
+        self._filter = function (value){
+            return value
+        }
+        
         self.fields = Array.from(form.querySelectorAll(SELECTOR)).map(function (input) {
 
             let fns = [];
@@ -153,6 +158,10 @@ export default function Pristine(form, config, live){
         return input.length ? input[0].pristine.errors : input.pristine.errors;
     };
 
+    function _filterCSNumber(value){
+        return parseInt(value.replaceAll(',', ''))
+    }
+
     /***
      * Validates a single field, all validator functions are called and error messages are generated
      * when a validator fails
@@ -166,7 +175,7 @@ export default function Pristine(form, config, live){
         for(let i = 0; field.validators[i]; i++) {
             let validator = field.validators[i];
             let params = field.params[validator.name] ? field.params[validator.name] : [];
-            params[0] = field.input.value;
+            params[0] = self._filter(field.input.value);
             if (!validator.fn.apply(field.input, params)){
                 valid = false;
 
@@ -209,6 +218,10 @@ export default function Pristine(form, config, live){
         } else {
             console.warn("The parameter elem must be a dom element");
         }
+    };
+
+    self.addFilter = function(filter){
+        self._filter = filter
     };
 
     /***
